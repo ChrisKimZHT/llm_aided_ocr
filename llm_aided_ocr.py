@@ -425,7 +425,7 @@ def convert_pdf_to_images(input_pdf_file_path: str, max_pages: int = 0, skip_fir
 
 def ocr_image(image):
     preprocessed_image = preprocess_image(image)
-    return pytesseract.image_to_string(preprocessed_image)
+    return pytesseract.image_to_string(preprocessed_image, lang="chi_sim")
 
 async def process_chunk(chunk: str, prev_context: str, chunk_index: int, total_chunks: int, reformat_as_markdown: bool, suppress_headers_and_page_numbers: bool) -> Tuple[str, str]:
     logging.info(f"Processing chunk {chunk_index + 1}/{total_chunks} (length: {len(chunk):,} characters)")
@@ -623,7 +623,7 @@ async def main():
     try:
         # Suppress HTTP request logs
         logging.getLogger("httpx").setLevel(logging.WARNING)
-        input_pdf_file_path = '160301289-Warren-Buffett-Katharine-Graham-Letter.pdf'
+        input_pdf_file_path = input("Enter the path to the PDF file: ")
         max_test_pages = 0
         skip_first_n_pages = 0
         reformat_as_markdown = True
@@ -641,7 +641,7 @@ async def main():
         base_name = os.path.splitext(input_pdf_file_path)[0]
         output_extension = '.md' if reformat_as_markdown else '.txt'
         
-        raw_ocr_output_file_path = f"{base_name}__raw_ocr_output.txt"
+        raw_ocr_output_file_path = f"{base_name}_raw_ocr_output.txt"
         llm_corrected_output_file_path = base_name + '_llm_corrected' + output_extension
 
         list_of_scanned_images = convert_pdf_to_images(input_pdf_file_path, max_test_pages, skip_first_n_pages)
