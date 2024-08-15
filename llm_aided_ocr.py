@@ -435,37 +435,37 @@ async def process_chunk(chunk: str, prev_context: str, chunk_index: int, total_c
     logging.info(f"Processing chunk {chunk_index + 1}/{total_chunks} (length: {len(chunk):,} characters)")
     
     # Step 1: OCR Correction
-    ocr_correction_prompt = f"""Correct OCR-induced errors in the text, ensuring it flows coherently with the previous context. Follow these guidelines:
+    ocr_correction_prompt = f"""纠正文本中由OCR引起的错误，确保其与前文内容流畅衔接。请遵循以下指南：
 
-1. Fix OCR-induced typos and errors:
-   - Correct words split across line breaks
-   - Fix common OCR errors (e.g., 'rn' misread as 'm')
-   - Use context and common sense to correct errors
-   - Only fix clear errors, don't alter the content unnecessarily
-   - Do not add extra periods or any unnecessary punctuation
+1. 修正由OCR引起的打字错误和错误：
+   - 纠正跨行断开的单词
+   - 修正常见的OCR错误（例如，将'rn'误读为'm'）
+   - 使用上下文和常识来纠正错误
+   - 只修正明显的错误，不要不必要地改动内容
+   - 不要添加额外的句号或任何不必要的标点符号
 
-2. Maintain original structure:
-   - Keep all headings and subheadings intact
+2. 保持原始结构：
+   - 保持所有标题和副标题完整
 
-3. Preserve original content:
-   - Keep all important information from the original text
-   - Do not add any new information not present in the original text
-   - Remove unnecessary line breaks within sentences or paragraphs
-   - Maintain paragraph breaks
-   
-4. Maintain coherence:
-   - Ensure the content connects smoothly with the previous context
-   - Handle text that starts or ends mid-sentence appropriately
+3. 保留原始内容：
+   - 保留原始文本中的所有重要信息
+   - 不添加原文中不存在的新信息
+   - 删除句子或段落内不必要的换行
+   - 保持段落分隔
 
-IMPORTANT: Respond ONLY with the corrected text. Preserve all original formatting, including line breaks. Do not include any introduction, explanation, or metadata.
+4. 保持连贯性：
+   - 确保内容与前文内容顺利衔接
+   - 适当处理开始或结束在句中的文本
 
-Previous context:
+重要提示：只回复修正后的文本。保留所有原始格式，包括换行。不要包括任何引言、解释或元数据。
+
+前文内容：
 {prev_context[-500:]}
 
-Current chunk to process:
+当前需要处理的内容块：
 {chunk}
 
-Corrected text:
+修正后的文本：
 """
     
     ocr_corrected_chunk = await generate_completion(ocr_correction_prompt, max_tokens=len(chunk) + 500)
@@ -474,31 +474,31 @@ Corrected text:
 
     # Step 2: Markdown Formatting (if requested)
     if reformat_as_markdown:
-        markdown_prompt = f"""Reformat the following text as markdown, improving readability while preserving the original structure. Follow these guidelines:
-1. Preserve all original headings, converting them to appropriate markdown heading levels (# for main titles, ## for subtitles, etc.)
-   - Ensure each heading is on its own line
-   - Add a blank line before and after each heading
-2. Maintain the original paragraph structure. Remove all breaks within a word that should be a single word (for example, "cor- rect" should be "correct")
-3. Format lists properly (unordered or ordered) if they exist in the original text
-4. Use emphasis (*italic*) and strong emphasis (**bold**) where appropriate, based on the original formatting
-5. Preserve all original content and meaning
-6. Do not add any extra punctuation or modify the existing punctuation
-7. Remove any spuriously inserted introductory text such as "Here is the corrected text:" that may have been added by the LLM and which is obviously not part of the original text.
-8. Remove any obviously duplicated content that appears to have been accidentally included twice. Follow these strict guidelines:
-   - Remove only exact or near-exact repeated paragraphs or sections within the main chunk.
-   - Consider the context (before and after the main chunk) to identify duplicates that span chunk boundaries.
-   - Do not remove content that is simply similar but conveys different information.
-   - Preserve all unique content, even if it seems redundant.
-   - Ensure the text flows smoothly after removal.
-   - Do not add any new content or explanations.
-   - If no obvious duplicates are found, return the main chunk unchanged.
-9. {"Identify but do not remove headers, footers, or page numbers. Instead, format them distinctly, e.g., as blockquotes." if not suppress_headers_and_page_numbers else "Carefully remove headers, footers, and page numbers while preserving all other content."}
+        markdown_prompt = f"""按照Markdown格式重新排列以下文本，提高可读性同时保留原始结构。请遵循以下指南：
+1. 保留所有原始标题，将它们转换为适当的Markdown标题级别（#用于主标题，##用于子标题等）
+   - 确保每个标题都在自己的行上
+   - 在每个标题前后添加一个空行
+2. 保持原始段落结构。删除单词内的所有断行，这些单词应该是一个单词（例如，“cor- rect”应该是“correct”）
+3. 如果原始文本中存在列表，则正确格式化列表（无序或有序）
+4. 根据原始格式适当使用强调（*斜体*）和强烈强调（**粗体**）
+5. 保留所有原始内容和意义
+6. 不添加任何额外的标点符号或修改现有的标点符号
+7. 删除任何错误插入的介绍性文本，例如“这里是更正后的文本：”，这可能已被LLM添加，并且显然不是原始文本的一部分。
+8. 删除任何明显重复的内容，这些内容似乎被意外地包含了两次。遵循这些严格的指南：
+   - 仅移除主要部分内完全相同或几乎相同的重复段落或部分。
+   - 考虑上下文（主要部分的前后）来识别跨越块边界的重复项。
+   - 不要移除仅仅相似但传达不同信息的内容。
+   - 即使看起来冗余也要保留所有独特的内容。
+   - 确保删除后文本流畅。
+   - 不添加任何新内容或解释。
+   - 如果没有发现明显的重复内容，返回主要部分不变。
+9. {"标识但不删除页眉、页脚或页码。相反，将它们格式化为显著的样式，例如作为引用块。" if not suppress_headers_and_page_numbers else "在保留所有其他内容的同时小心地移除页眉、页脚和页码。"}
 
-Text to reformat:
+需要重新格式化的文本：
 
 {ocr_corrected_chunk}
 
-Reformatted markdown:
+重新格式化的Markdown：
 """
         processed_chunk = await generate_completion(markdown_prompt, max_tokens=len(ocr_corrected_chunk) + 500)
     new_context = processed_chunk[-1000:]  # Use the last 1000 characters as context for the next chunk
@@ -584,28 +584,28 @@ async def assess_output_quality(original_text, processed_text):
     original_sample = original_text[:available_chars_per_text]
     processed_sample = processed_text[:available_chars_per_text]
     
-    prompt = f"""Compare the following samples of original OCR text with the processed output and assess the quality of the processing. Consider the following factors:
-1. Accuracy of error correction
-2. Improvement in readability
-3. Preservation of original content and meaning
-4. Appropriate use of markdown formatting (if applicable)
-5. Removal of hallucinations or irrelevant content
+    prompt = f"""比较以下原始OCR文本样本与处理后的输出，并评估处理的质量。考虑以下因素：
+1. 错误修正的准确性
+2. 可读性的提高
+3. 原始内容和意义的保留
+4. 适当使用Markdown格式化（如果适用）
+5. 删除幻觉或不相关内容
 
-Original text sample:
+原始文本样本：
 ```
 {original_sample}
 ```
 
-Processed text sample:
+处理后的文本样本：
 ```
 {processed_sample}
 ```
 
-Provide a quality score between 0 and 100, where 100 is perfect processing. Also provide a brief explanation of your assessment.
+提供一个0到100的质量评分，其中100是完美处理。还请提供对您评估的简要说明。
 
-Your response should be in the following format:
-SCORE: [Your score]
-EXPLANATION: [Your explanation]
+您的回答应该采用以下格式：
+分数：[您的分数]
+解释：[您的解释]
 """
 
     response = await generate_completion(prompt, max_tokens=1000)
