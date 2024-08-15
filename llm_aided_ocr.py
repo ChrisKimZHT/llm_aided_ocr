@@ -45,7 +45,11 @@ DEFAULT_LOCAL_MODEL_NAME = "Llama-3.1-8B-Lexi-Uncensored_Q5_fixedrope.gguf"
 LOCAL_LLM_CONTEXT_SIZE_IN_TOKENS = 2048
 USE_VERBOSE = False
 
-openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+USE_SELFHOST_API=config.get("USE_SELFHOST_API", default=False, cast=bool)
+SELFHOST_MODEL_NAME=config.get("SELFHOST_MODEL_NAME", default="qwen2-instruct", cast=str)
+SELFHOST_API_URL=config.get("SELFHOST_API_URL", default="http://localhost:8000", cast=str)
+
+openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=SELFHOST_API_URL)
 warnings.filterwarnings("ignore", category=FutureWarning)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -319,7 +323,7 @@ async def generate_completion_from_openai(prompt: str, max_tokens: int = 5000) -
         for chunk in chunks:
             try:
                 response = await openai_client.chat.completions.create(
-                    model=OPENAI_COMPLETION_MODEL,
+                    model=OPENAI_COMPLETION_MODEL if not USE_SELFHOST_API else SELFHOST_MODEL_NAME,
                     messages=[{"role": "user", "content": chunk}],
                     max_tokens=adjusted_max_tokens,
                     temperature=0.7,
@@ -333,7 +337,7 @@ async def generate_completion_from_openai(prompt: str, max_tokens: int = 5000) -
     else:
         try:
             response = await openai_client.chat.completions.create(
-                model=OPENAI_COMPLETION_MODEL,
+                model=OPENAI_COMPLETION_MODEL if not USE_SELFHOST_API else SELFHOST_MODEL_NAME,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=adjusted_max_tokens,
                 temperature=0.7,
